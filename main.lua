@@ -20,16 +20,34 @@ local boxHpRock = display.newText ({ text="", x=_W/2, y=_H/2+200, font=native.sy
 boxHpRock:setFillColor (0)
 
 local currentRock = nil
-local autoMineVector = {}
+local dollars = 0
+local minerFrequency = {}   -- average hits per second, per miner
+local minerPower = {}       -- average hp reduction per hit, per miner
+local minerSkill = {}       -- hp reduction multipler, per miner
 
 function initialize ()
+	local lockedIndex = 2
+	
+	-- add prev/next links to rock defintions
+	for i=1,#rockdefs do
+		if i > 1 then rockdefs[i].prev = rockdefs[i-1] end
+		if i < #rockdefs then rockdefs[i].next = rockdefs[i+1] end
+		if i >= lockedIndex then rockdefs[i].lockNext = true end
+		rockdefs[i].index = i
+	end
+	
+	
+	dollars = 0
+	minerFrequency = { 0 }
+	minerPower = { 1.0 }
+	minerSkill = { 1.0 }
 	setCurrentRock (rockdefs[1])
 end
 
 function abstractMine (skill, power, frequency, time)
 end
 
-function mine (skill, power)
+function mine (power, skill)
 	local hp = skill * power
 	if currentRock then
 		currentRock.hp = currentRock.hp - hp
@@ -37,6 +55,7 @@ function mine (skill, power)
 			boxHpRock.text = "HP: " .. currentRock.hp
 			boxDollarsRock.text = "$" .. currentRock.actualDollars
 		else
+			currentRock.lockNext = false
 			issueRewardForRock ()
 			resetRock ()
 		end
@@ -44,7 +63,7 @@ function mine (skill, power)
 end
 
 function manualMine ()
-	mine (1.0, 1.0)
+	mine (minerPower[1], minerSkill[1])
 end
 
 function issueRewardForRock ()
@@ -80,7 +99,7 @@ end
 -- Rock definitions
 rockdefs = {
 	{ name = "Dirt", startHP = 10, dollars = 1, image = "dirt-pile.jpg" },
-	{ name = "Clay", startHP = 10, image = "" },
+	{ name = "Clay", startHP = 50, dollars = 10, image = "clay.jpg" },
 	{ name = "Sand", startHP = 10, image = "" },
 	{ name = "Gravel", startHP = 10, image = "" },
 	{ name = "Rock", startHP = 10, image = "" },
