@@ -1,0 +1,32 @@
+settings = 
+{
+	orientation =
+	{
+		default = "portrait",
+		supported = { "portrait" }
+	},
+	iphone =
+	{
+		plist =
+		{
+			CFBundleIconFile = "icons/Icon.png",
+			CFBundleIconFiles =
+			{
+                "icons/Icon.png", 
+                "icons/Icon@2x.png", 
+                "icons/Icon-60.png",
+                "icons/Icon-60@2x.png",
+                "icons/Icon-72.png", 
+                "icons/Icon-72@2x.png",
+                "icons/Icon-76.png",
+                "icons/Icon-76@2x.png", 
+                "icons/Icon-Small.png", 
+                "icons/Icon-Small@2x.png",
+                "icons/Icon-Small-40.png",
+                "icons/Icon-Small-40@2x.png",
+                "icons/Icon-Small-50.png", 
+                "icons/Icon-Small-50@2x.png",
+			},
+		},
+	},
+}
