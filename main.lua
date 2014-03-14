@@ -19,14 +19,24 @@ boxDollarsRock:setFillColor (0)
 local boxHpRock = display.newText ({ text="", x=_W/2, y=_H/2+200, font=native.systemFont, fontSize=48 })
 boxHpRock:setFillColor (0)
 
+local boxDollarsTotal = display.newText ({ text="", x=_W/2, y=100, font=native.systemFont, fontSize=48, align="left", width=_W })
+boxHpRock:setFillColor (0)
+
+local buttonNewPickaxe = display.newImage ("images/axe_icon.png", 60, _H - 60)
+buttonNewPickaxe:addEventListener ("tap", function(event)
+	tryAddAxe ()
+	end)
+
 local currentRock = nil
 local dollars = 0
+local axeGenPower = 0
+local axeGenImprove = 0
 local minerFrequency = {}   -- average hits per second, per miner
 local minerPower = {}       -- average hp reduction per hit, per miner
 local minerSkill = {}       -- hp reduction multipler, per miner
 
 function initialize ()
-	local lockedIndex = 2
+	local lockedIndex = 1
 	
 	-- add prev/next links to rock defintions
 	for i=1,#rockdefs do
@@ -38,10 +48,22 @@ function initialize ()
 	
 	
 	dollars = 0
+	axeGenPower = 10        -- minimum power of next axe
+	axeGenImprove = 0.5
 	minerFrequency = { 0 }
 	minerPower = { 1.0 }
 	minerSkill = { 1.0 }
 	setCurrentRock (rockdefs[1])
+	
+	updateDisplay ()
+end
+
+function updateDisplay ()
+	boxDollarsTotal.text = "$" .. dollars
+end
+
+function randomVariance (n, variance)
+	return math.random (math.round(n * (1 - variance)), math.round(n * (1 + variance)))
 end
 
 function abstractMine (skill, power, frequency, time)
@@ -67,6 +89,8 @@ function manualMine ()
 end
 
 function issueRewardForRock ()
+	dollars = dollars + currentRock.actualDollars
+	updateDisplay ()
 end
 
 function clearCurrentRock ()
@@ -81,7 +105,11 @@ end
 function setCurrentRock (r)
 	if currentRock then clearCurrentRock () end
 	boxNameRock.text = r.name
-	r.displayImage = display.newImage ("images/" .. r.image, _W/2, _H/2)
+	if r.image and r.image ~= "" then
+		r.displayImage = display.newImage ("images/" .. r.image, _W/2, _H/2)
+	else
+		r.displayImage = display.newImage ("images/blank.png", _W/2, _H/2)
+	end
 	r.displayImage:toBack ()
 	r.displayImage:addEventListener ("tap", manualMine) -- name, numTaps, x, y
 	currentRock = r
@@ -89,21 +117,53 @@ function setCurrentRock (r)
 end
 
 function resetRock ()
-	currentRock.hp = currentRock.startHP
-	currentRock.actualDollars = math.random (math.round(currentRock.dollars * 0.9), math.round(currentRock.dollars * 1.10))
+	currentRock.hp = randomVariance (currentRock.startHP, 0.10)
+	currentRock.actualDollars = randomVariance (currentRock.dollars, 0.20)
+	
+	showArrows ()
 	
 	boxHpRock.text = "HP: " .. currentRock.hp
 	boxDollarsRock.text = "$" .. currentRock.actualDollars
+end
+
+function tryAddAxe ()
+	local newPower = axeGenPower + randomVariance (axeGenPower, axeGenImprove)
+	minerPower[1] = newPower
+end
+
+local leftArrow = nil
+local rightArrow = nil
+function showArrows ()
+	if leftArrow then
+		leftArrow:removeSelf ()
+		leftArrow = nil
+	end
+	if rightArrow then
+		rightArrow:removeSelf ()
+		rightArrow = nil
+	end
+	if currentRock.prev then
+		leftArrow = display.newImage ("images/Backward Arrow.png", 128, _H/2)
+		leftArrow:addEventListener ("tap", function (event)
+			setCurrentRock (currentRock.prev)
+			end)
+	end
+	if currentRock.next and not currentRock.lockNext then
+		rightArrow = display.newImage ("images/Forward Arrow.png", _W-128, _H/2)
+		rightArrow:addEventListener ("tap", function (event)
+			setCurrentRock (currentRock.next)
+			end)
+	end
 end
 
 -- Rock definitions
 rockdefs = {
 	{ name = "Dirt", startHP = 10, dollars = 1, image = "dirt-pile.jpg" },
 	{ name = "Clay", startHP = 50, dollars = 10, image = "clay.jpg" },
-	{ name = "Sand", startHP = 10, image = "" },
-	{ name = "Gravel", startHP = 10, image = "" },
-	{ name = "Rock", startHP = 10, image = "" },
-	{ name = "FlagStone", startHP = 10, image = "" },
+	{ name = "Sand", startHP = 500, dollars = 100, image = "" },
+	{ name = "Gravel", startHP = 20000, dollars = 3000, image = "" },
+	{ name = "Rock", startHP = 1000000, dollars = 40000, image = "" },
+	{ name = "FlagStone", startHP = 2500000, dollars = 100000, image = "" },
 }
 
 initialize ()
