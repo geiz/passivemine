@@ -1,6 +1,10 @@
 -- Copyright 2014 Opplet LLC   --
 ---------------------------------
 
+local defsys = require("logicinterface")
+if true then return nil end
+
+
 -- MINEY!!! Game --
 
 local _W, _H = display.contentWidth, display.contentHeight
