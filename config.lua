@@ -1,11 +1,29 @@
--- config.lua
-
-application =
-{
-	content =
-	{
-		width = 640,
-		height = 960,
-		scale = "letterbox" -- zoom to screen dimensions (may add extra space at top or sides)
+application = {
+	content = {
+		width = 320,
+		height = 480, 
+		scale = "letterBox",
+		fps = 30,
+		
+		--[[
+        imageSuffix = {
+		    ["@2x"] = 2,
+		}
+		--]]
 	},
+
+    --[[
+    -- Push notifications
+
+    notification =
+    {
+        iphone =
+        {
+            types =
+            {
+                "badge", "sound", "alert", "newsstand"
+            }
+        }
+    }
+    --]]    
 }

@@ -1,173 +1,393 @@
--- Copyright 2014 Opplet LLC   --
+-- Copyright 2014 Opplet LLC
 ---------------------------------
 
-local defsys = require("logicinterface")
-if true then return nil end
+display.setStatusBar( display.HiddenStatusBar ) 
 
+local widget = require ("widget")
 
--- MINEY!!! Game --
 
 local _W, _H = display.contentWidth, display.contentHeight
+local viewable_W, viewable_H = display.viewableContentWidth, display.viewableContentHeight
+local screenOffsetW, screenOffsetH = display.contentWidth -  display.viewableContentWidth, display.contentHeight - display.viewableContentHeight
 
-display.setDefault ("background", 1)
-display.setDefault ("fillColor", 0.5)
-display.setDefault ("strokeColor", 0)
-display.setDefault ("lineColor", 0)
+local imgNum = 1 -- Starts at 1 for new game.
+local imgMax = 6 -- maximum number of images ingame
+local loadedImgs = {nil,nil,nil}
+		-- Array of Size 3, stores image number
+		-- These imgs are a list of displays grouped together
+local background
+local imageNumberText, imageNumberTextShadow
+local display_may_need_update = true
 
-local boxNameRock = display.newText ({ text="", x=_W/2, y=_H/2-240, font=native.systemFont, fontSize=48 })
-boxNameRock:setFillColor (0)
+local rockdefs = require ("rockdefs")
+local playerstats = require ("playerstats")
+--function newSlide(rockdefs, slideBackground)
+	local pad = 20
+	local x_anchor = _W/2
+	local y_anchor = 340
+	local x_offset_img = _W
+	local x_offset_text = _W/2
+	local y_offset_text = 18
 
-local boxDollarsRock = display.newText ({ text="", x=_W/2, y=_H/2-180, font=native.systemFont, fontSize=48 })
-boxDollarsRock:setFillColor (0)
 
-local boxHpRock = display.newText ({ text="", x=_W/2, y=_H/2+200, font=native.systemFont, fontSize=48 })
-boxHpRock:setFillColor (0)
+	local g = display.newGroup()
+		
+	--[[if slideBackground then
+		background = display.newImage(slideBackground, 0, 0, true)
+	else]]
+		background = display.newRect( 0, 0, _W, _H)
 
-local boxDollarsTotal = display.newText ({ text="", x=_W/2, y=100, font=native.systemFont, fontSize=48, align="left", width=_W })
-boxHpRock:setFillColor (0)
+		-- set anchors on the background
+		background.anchorX = 0
+		background.anchorY = 0
 
-local buttonNewPickaxe = display.newImage ("images/axe_icon.png", 60, _H - 60)
-buttonNewPickaxe:addEventListener ("tap", function(event)
-	tryAddAxe ()
-	end)
+		background:setFillColor(1) 
+		background.alpha = 1 -- 0 will set BG as invisible
+		background.isHitTestable = true -- Allows invisible to be hit 
+	--end
+	-- Positions background
+	g.x = 0
+	--g.y = display.screenOriginY  -- screenOriginY is from the top part of screen
+	g:insert(background)
 
-local currentRock = nil
-local dollars = 0
-local axeGenPower = 0
-local axeGenImprove = 0
-local minerFrequency = {}   -- average hits per second, per miner
-local minerPower = {}       -- average hp reduction per hit, per miner
-local minerSkill = {}       -- hp reduction multipler, per miner
+	--Creates invisible hitbox
+	mine_box = display.newRect(20,145,280,190,true)
+	mine_box.anchorX = 0
+	mine_box.anchorY = 0
+	--mine_box.x = 25
+	--mine_box.y = 200
+	mine_box:setFillColor(0.5,0,0)
+	mine_box.alpha = 0.5
+	mine_box.isHitTestable = true
+	g:insert(mine_box)
 
-function initialize ()
-	local lockedIndex = 1
-	
-	-- add prev/next links to rock defintions
-	for i=1,#rockdefs do
-		if i > 1 then rockdefs[i].prev = rockdefs[i-1] end
-		if i < #rockdefs then rockdefs[i].next = rockdefs[i+1] end
-		if i >= lockedIndex then rockdefs[i].lockNext = true end
-		rockdefs[i].index = i
+
+	-- array 2 is the shown one. 1 is left, 3 is right.
+	-- This function starts the game from beginning
+	function init() 
+		loadedImgs[1] = nil
+		loadedImgs[2] = Load_Slidable_Display(1, 0)
+		loadedImgs[3] = Load_Slidable_Display(2,x_offset_img)
+		print(loadedImgs[1])
+		print(loadedImgs[2])
+		print(loadedImgs[3])
+		-- imgNum = loadedImgs[2].id -- This line doesn't work.... not sure why
+		imgNum = 1
+		---------
+		--dollars = addStat("$")
 	end
-	
-	
-	dollars = 0
-	axeGenPower = 10        -- minimum power of next axe
-	axeGenImprove = 0.5
-	minerFrequency = { 0 }
-	minerPower = { 1.0 }
-	minerSkill = { 1.0 }
-	setCurrentRock (rockdefs[1])
-	
-	updateDisplay ()
-end
 
-function updateDisplay ()
-	boxDollarsTotal.text = "$" .. dollars
-end
+	-- Adds static texts onto the screen, stored in text_Boxes table.
+	---- Anchor for the texts are set as top left corner of text
+	function Load_Screen_Texts (x, y, text, fontSize, font)
+		local tempText
+		local defaultFont = native.systemFont
+		
+		if font then 
+		else font = defaultFont end
 
-function randomVariance (n, variance)
-	return math.random (math.round(n * (1 - variance)), math.round(n * (1 + variance)))
-end
+		-- Creates new text on screen
+		tempText = display.newText(text, x, y, font, fontSize)
+		tempText.anchorX = 0 --afssssssssssssssssssssssssssssssss
+		tempText.anchorY = 0 
+		tempText:setFillColor(0)
+		-- Adds Created text to array
+		--table.insert(text_boxes, temp_text
+		return tempText
+	end
 
-function abstractMine (skill, power, frequency, time)
-end
 
-function mine (power, skill)
-	local hp = skill * power
-	if currentRock then
-		currentRock.hp = currentRock.hp - hp
-		if currentRock.hp > 0 then
-			boxHpRock.text = "HP: " .. currentRock.hp
-			boxDollarsRock.text = "$" .. currentRock.actualDollars
+
+
+
+
+
+	 display_table_length = 1  -- Represents number of elements in display_table
+
+	-- rID: Int, rockID. The key for the  array 
+	-- loadedImgNum: Int[1..3], defines the arrays. 1 is leftmost, 3 is rightmost
+	function Load_Slidable_Display (rID, x_offset_img)
+		if (rockdefs[rID]) then
+			local displayImg
+			local displayTable = {
+				image = display.newImage(rockdefs[rID].image, x_anchor+x_offset_img, y_anchor-100),
+				id = rockdefs[rID].id
+			}
+			return displayTable
 		else
-			currentRock.lockNext = false
-			issueRewardForRock ()
-			resetRock ()
+			return nil
 		end
 	end
-end
 
-function manualMine ()
-	mine (minerPower[1], minerSkill[1])
-end
+	init()
 
-function issueRewardForRock ()
-	dollars = dollars + currentRock.actualDollars
-	updateDisplay ()
-end
+	-- These are Passive, they do not change.
+	local symbols = {
+		hp = "HP: ",
+		defense = "D: ",
+		gem = "Gem: ",
+		dollar = "$ ",
+		pick_power = "Pick Power: ",
+		pick_quality = "Q: ",
+		active_multiplier = "Active Multiplier: ",
+		passive_multiplier = "Passive Multiplier: ",
+	}
 
-function clearCurrentRock ()
-	if currentRock then
-		boxNameRock.text = ""
-		currentRock.displayImage:removeSelf ()
-		currentRock.displayImage = nil
-		currentRock = nil
-	end
-end
+	local values = {
+		rock_name = rockdefs[loadedImgs[2].id].name,
+		rock_hp = symbols.hp .. rockdefs[loadedImgs[2].id].curr_hp,
+		rock_defense = symbols.defense .. rockdefs[loadedImgs[2].id].defense,
+		rock_dollar = symbols.dollar .. rockdefs[loadedImgs[2].id].dollar,
 
-function setCurrentRock (r)
-	if currentRock then clearCurrentRock () end
-	boxNameRock.text = r.name
-	if r.image and r.image ~= "" then
-		r.displayImage = display.newImage ("images/" .. r.image, _W/2, _H/2)
-	else
-		r.displayImage = display.newImage ("images/blank.png", _W/2, _H/2)
-	end
-	r.displayImage:toBack ()
-	r.displayImage:addEventListener ("tap", manualMine) -- name, numTaps, x, y
-	currentRock = r
-	resetRock ()
-end
+		player_name = playerstats.name,
+		player_dollar = symbols.dollar .. playerstats.dollar,
+		player_gem = symbols.gem .. playerstats.gem,
+		player_pickaxe_power = symbols.pick_power .. playerstats.pickaxe_power,
+		player_pickaxe_quality = symbols.pick_quality .. playerstats.pickaxe_quality,
+		player_active_multiplier = symbols.active_multiplier ..  playerstats.active_multiplier,
+		player_passive_multiplier = symbols.passive_multiplier .. playerstats.passive_multiplier,
 
-function resetRock ()
-	currentRock.hp = randomVariance (currentRock.startHP, 0.10)
-	currentRock.actualDollars = randomVariance (currentRock.dollars, 0.20)
+		player_active_hit = playerstats.pickaxe_power * playerstats.pickaxe_quality* playerstats.active_multiplier,
+		player_passive_hit = playerstats.pickaxe_power * playerstats.pickaxe_quality* playerstats.passive_multiplier,
+	}
+
+	-- Lists of default textboxes. This occurs on first load
+	local text_boxes = {
+		r_name = Load_Screen_Texts(0,0, values.rock_name, 15),
+		r_hp = Load_Screen_Texts(0,y_offset_text, values.rock_hp, 15),
+		r_defense = Load_Screen_Texts(0,y_offset_text*2,values.rock_defense, 15),
+		r_dollar = Load_Screen_Texts(0,y_offset_text*3,values.rock_dollar, 15),
+		
+		p_name = Load_Screen_Texts( x_offset_text, 0, values.player_name, 15),
+		p_dollar = Load_Screen_Texts( x_offset_text, y_offset_text, values.player_dollar, 15),
+		p_gem = Load_Screen_Texts( x_offset_text, y_offset_text*2, values.player_gem, 15),
+		p_pickaxe_power = Load_Screen_Texts( x_offset_text, y_offset_text*3, values.player_pickaxe_power, 15),
+		p_pickaxe_quality = Load_Screen_Texts( x_offset_text, y_offset_text*4, values.player_pickaxe_quality, 15),
+		p_active_multiplier = Load_Screen_Texts( x_offset_text, y_offset_text*5, values.player_active_multiplier, 15),
+		p_passive_multiplier = Load_Screen_Texts( x_offset_text, y_offset_text*6, values.player_passive_multiplier, 15),
 	
-	showArrows ()
+	}
+
+
+
+		-- Things that need to be updated
+	function Update_Values () 
+		values.rock_name = rockdefs[loadedImgs[2].id].name
+		values.rock_hp = symbols.hp .. rockdefs[loadedImgs[2].id].curr_hp
+		values.rock_defense = symbols.defense .. rockdefs[loadedImgs[2].id].defense
+		values.rock_dollar = symbols.dollar .. rockdefs[loadedImgs[2].id].dollar
+
+		values.player_dollar = symbols.dollar .. playerstats.dollar
+		values.player_gem = symbols.gem .. playerstats.gem
+		values.player_pickaxe_power = symbols.pick_power .. playerstats.pickaxe_power
+		values.player_active_multiplier = symbols.active_multiplier ..  playerstats.active_multiplier
+		values.player_passive_multiplier = symbols.passive_multiplier .. playerstats.passive_multiplier
+
+		text_boxes["r_name"].text = values.rock_name
+		text_boxes["r_hp"].text = values.rock_hp
+		text_boxes["r_defense"].text = values.rock_defense
+		text_boxes["r_dollar"].text = values.rock_dollar
+
+		text_boxes["p_dollar"].text = values.player_dollar
+		text_boxes["p_gem"].text = values.player_gem
+		text_boxes["p_pickaxe_power"].text = values.player_pickaxe_power
+		text_boxes["p_active_multiplier"].text = values.player_active_multiplier
+		text_boxes["p_passive_multiplier"].text = values.player_passive_multiplier
+		--[[rock_hp = Load_Screen_Texts(0,y_offset_text,rockdefs[loadedImgs[2].id].curr_hp, 15),
+		rock_defense = Load_Screen_Texts(0,y_offset_text*2,rockdefs[loadedImgs[2].id].defense, 15),
+		rock_dollar = Load_Screen_Texts(0,y_offset_text*3,rockdefs[loadedImgs[2].id].dollars, 15),
+		_name = Load_Screen_Texts(0,y_offset_text*4,"fuzzyMonkey", 15),
+		}]]
+
+
+	end
+
+	-- Moves a display_table from its current location to xEnd instantaniously
+	---- 
+	function Move_Image_Table (displayTable, xEnd)
+		displayTable.image.x = xEnd
+	end
+
+	-- removes an image from screen and memory
+	function Remove_Img(image)
+		image:removeSelf() -- remove from screen
+		image = nil -- remove from memory
+		--return image 
+	end
+
+	function Remove_Image_Table (imageTable)
+	--	imageTable.image = Remove_Img(imageTable.image)
+	Remove_Img(imageTable.image)
 	
-	boxHpRock.text = "HP: " .. currentRock.hp
-	boxDollarsRock.text = "$" .. currentRock.actualDollars
-end
-
-function tryAddAxe ()
-	local newPower = axeGenPower + randomVariance (axeGenPower, axeGenImprove)
-	minerPower[1] = newPower
-end
-
-local leftArrow = nil
-local rightArrow = nil
-function showArrows ()
-	if leftArrow then
-		leftArrow:removeSelf ()
-		leftArrow = nil
 	end
-	if rightArrow then
-		rightArrow:removeSelf ()
-		rightArrow = nil
-	end
-	if currentRock.prev then
-		leftArrow = display.newImage ("images/Backward Arrow.png", 128, _H/2)
-		leftArrow:addEventListener ("tap", function (event)
-			setCurrentRock (currentRock.prev)
-			end)
-	end
-	if currentRock.next and not currentRock.lockNext then
-		rightArrow = display.newImage ("images/Forward Arrow.png", _W-128, _H/2)
-		rightArrow:addEventListener ("tap", function (event)
-			setCurrentRock (currentRock.next)
-			end)
-	end
-end
 
--- Rock definitions
-rockdefs = {
-	{ name = "Dirt", startHP = 10, dollars = 1, image = "dirt-pile.jpg" },
-	{ name = "Clay", startHP = 50, dollars = 10, image = "clay.jpg" },
-	{ name = "Sand", startHP = 500, dollars = 100, image = "" },
-	{ name = "Gravel", startHP = 20000, dollars = 3000, image = "" },
-	{ name = "Rock", startHP = 1000000, dollars = 40000, image = "" },
-	{ name = "FlagStone", startHP = 2500000, dollars = 100000, image = "" },
-}
+	function abs (num)
+		if num > 0 then
+			return
+		else
+			return -num
+		end
+	end
 
-initialize ()
+
+	function Touch_Listener (self, touch)
+		local phase = touch.phase
+		if (phase == "began") then
+            display.getCurrentStage():setFocus( self )
+            self.isFocus = true
+
+			startPos = touch.x
+			prevPos = touch.x
+		
+		elseif( self.isFocus ) then
+
+			local deltaX = touch.x - prevPos
+			prevPos = touch.x
+
+			local deltaXFromStartstart = touch.x - startPos
+
+			if ( phase == "moved" ) then
+			
+						
+				if tween then transition.cancel(tween) end
+				
+				-- Drags current image around by hand
+				--Move_Image_Table(loadedImgs[2],loadedImgs[2].displayImg1.x+deltaX)
+				
+				-- This part allows next images to be dragged into view before hand is lifted
+				if (loadedImgs[1]) then
+					Move_Image_Table(loadedImgs[1],loadedImgs[1].image.x+deltaX)
+				end
+				
+				if (loadedImgs[3]) then
+					Move_Image_Table(loadedImgs[3],loadedImgs[3].image.x+deltaX)
+				end
+
+			elseif ( phase == "ended" or phase == "cancelled" ) then
+				
+				--if touch.x < 100 --[[and abs(deltaX) > 50]] then
+				if (deltaXFromStartstart < -100) then
+					Next_Image()
+				--elseif touch.x > _W - 100 --[[and abs(deltaX) > 50]] then
+				elseif (deltaXFromStartstart > 100) then
+					Prev_Image()
+				else 
+					Cancel_Move_And_Click()
+				end
+				
+				if ( phase == "cancelled" ) then		
+					Cancel_Move_And_Click()
+				end
+
+                -- Allow touch events to be sent normally to the objects they "hit"
+                display.getCurrentStage():setFocus( nil )
+                self.isFocus = false
+														
+			end
+		end
+					
+		return true
+		
+	end
+
+	function Active_Mine ()
+		
+		values.rock_hp = values.rock_hp - values.player_pickaxe_power
+	end
+
+	function Cancel_Tween()
+		if prevTween then 
+			transition.cancel(prevTween)
+		end
+		prevTween = tween 
+	end
+	
+
+	function Next_Image()
+		-- Resets rock health values
+		rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].start_hp
+
+		if imgNum > imgMax - 1 then
+			print("At the Final Rock!")
+			Cancel_Move_And_Click()
+			return
+		end
+
+		-- Removes loadedImgs[1] from offScreen display and memory if it exists
+		if loadedImgs[1] then Remove_Image_Table(loadedImgs[1]) else print("loadedImgs[1] does not exist!") end
+		-- Load new images
+		loadedImgs[1] = loadedImgs[2]
+		loadedImgs[2] = loadedImgs[3]
+		loadedImgs[3] = Load_Slidable_Display(imgNum + 2, x_offset_img)
+
+		print(loadedImgs[1] )
+		print(loadedImgs[2] )
+		print(loadedImgs[3] )
+
+		tween = transition.to( loadedImgs[1], {time=400, Move_Image_Table(loadedImgs[1],x_anchor-x_offset_img), transition=easing.outExpo } )
+		tween = transition.to( loadedImgs[2], {time=400, Move_Image_Table(loadedImgs[2],x_anchor), transition=easing.outExpo } )
+
+		imgNum = imgNum + 1
+	end
+
+	
+	function Prev_Image()
+		-- Resets rock health values
+		rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].start_hp
+
+
+		if imgNum < 2 then
+			print("At the First Rock!")
+			Cancel_Move_And_Click()
+			return
+		end
+
+		-- Removes loadedImgs[3] from offScreen display and memory if it exists
+		if loadedImgs[3] then Remove_Image_Table(loadedImgs[3]) else print("loadedImgs[3] does not exist!") end
+		-- Load new images
+		loadedImgs[3] = loadedImgs[2] 
+		loadedImgs[2] = loadedImgs[1]
+		loadedImgs[1] = Load_Slidable_Display(imgNum - 2, -x_offset_img)
+
+		print(loadedImgs[1] )
+		print(loadedImgs[2] )
+		print(loadedImgs[3] )
+
+		tween = transition.to(loadedImgs[2], {time=400, Move_Image_Table(loadedImgs[2],x_anchor), transition=easing.outExpo } )
+		tween = transition.to(loadedImgs[3], {time=400, Move_Image_Table(loadedImgs[3],x_anchor+x_offset_img), transition=easing.outExpo } )
+
+		imgNum = imgNum - 1
+	end
+
+	
+	function Cancel_Move_And_Click()
+		-- Resets Positioning of the 3 loaded images
+		tween = transition.to( loadedImgs[2], {time=400, Move_Image_Table(loadedImgs[2],x_anchor), transition=easing.outExpo } )
+		if loadedImgs[1] then
+			tween = transition.to( loadedImgs[1], {time=400, Move_Image_Table(loadedImgs[1],x_anchor-x_offset_img), transition=easing.outExpo } )
+		end
+		if loadedImgs[3] then
+			tween = transition.to( loadedImgs[3], {time=400, Move_Image_Table(loadedImgs[3],x_anchor+x_offset_img), transition=easing.outExpo } )
+		end
+
+		-- Manual Click logic
+		if rockdefs[loadedImgs[2].id].defense > values.player_active_hit then -- if player's hit bypasses defense
+		else
+			rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].curr_hp - values.player_active_hit
+			if rockdefs[loadedImgs[2].id].curr_hp <= 0 then
+				playerstats.dollar = playerstats.dollar + rockdefs[loadedImgs[2].id].dollar
+				print(playerstats.dollar)
+				rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].start_hp
+			end
+		end
+	end
+
+	mine_box.touch = Touch_Listener
+	mine_box:addEventListener( "touch", mine_box )
+	Runtime:addEventListener ("enterFrame", function (event) if display_may_need_update then Update_Values () end end)
+
+
+
+--end
+
+--newSlide(rockdefs, nil, 25, 1)
