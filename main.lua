@@ -3,6 +3,7 @@
 
 display.setStatusBar( display.HiddenStatusBar ) 
 
+local config = require ("configuration")
 local widget = require ("widget")
 
 
@@ -19,8 +20,8 @@ local background
 local imageNumberText, imageNumberTextShadow
 local display_may_need_update = true
 
-local rockdefs = require ("rockdefs")
-local playerstats = require ("playerstats")
+local playerstats = config.loadPlayerStats()
+
 --function newSlide(rockdefs, slideBackground)
 	local pad = 20
 	local x_anchor = _W/2
@@ -107,11 +108,12 @@ local playerstats = require ("playerstats")
 	-- rID: Int, rockID. The key for the  array 
 	-- loadedImgNum: Int[1..3], defines the arrays. 1 is leftmost, 3 is rightmost
 	function Load_Slidable_Display (rID, x_offset_img)
-		if (rockdefs[rID]) then
+		local rockdef = config.getRockDefinition(rID)
+		if (rockdef) then
 			local displayImg
 			local displayTable = {
-				image = display.newImage(rockdefs[rID].image, x_anchor+x_offset_img, y_anchor-100),
-				id = rockdefs[rID].id
+				image = display.newImage(rockdef.image, x_anchor+x_offset_img, y_anchor-100),
+				id = rockdef.id
 			}
 			return displayTable
 		else
@@ -133,11 +135,13 @@ local playerstats = require ("playerstats")
 		passive_multiplier = "Passive Multiplier: ",
 	}
 
+	local rockdef = config.getRockDefinition (loadedImgs[2].id)
+
 	local values = {
-		rock_name = rockdefs[loadedImgs[2].id].name,
-		rock_hp = symbols.hp .. rockdefs[loadedImgs[2].id].curr_hp,
-		rock_defense = symbols.defense .. rockdefs[loadedImgs[2].id].defense,
-		rock_dollar = symbols.dollar .. rockdefs[loadedImgs[2].id].dollar,
+		rock_name = rockdef.name,
+		rock_hp = symbols.hp .. rockdef.curr_hp,
+		rock_defense = symbols.defense .. rockdef.defense,
+		rock_dollar = symbols.dollar .. rockdef.dollar,
 
 		player_name = playerstats.name,
 		player_dollar = symbols.dollar .. playerstats.dollar,
@@ -171,11 +175,12 @@ local playerstats = require ("playerstats")
 
 
 		-- Things that need to be updated
-	function Update_Values () 
-		values.rock_name = rockdefs[loadedImgs[2].id].name
-		values.rock_hp = symbols.hp .. rockdefs[loadedImgs[2].id].curr_hp
-		values.rock_defense = symbols.defense .. rockdefs[loadedImgs[2].id].defense
-		values.rock_dollar = symbols.dollar .. rockdefs[loadedImgs[2].id].dollar
+	function Update_Values ()
+		local rockdef = config.getRockDefinition(loadedImgs[2].id)
+		values.rock_name = rockdef.name
+		values.rock_hp = symbols.hp .. rockdef.curr_hp
+		values.rock_defense = symbols.defense .. rockdef.defense
+		values.rock_dollar = symbols.dollar .. rockdef.dollar
 
 		values.player_dollar = symbols.dollar .. playerstats.dollar
 		values.player_gem = symbols.gem .. playerstats.gem
@@ -193,11 +198,6 @@ local playerstats = require ("playerstats")
 		text_boxes["p_pickaxe_power"].text = values.player_pickaxe_power
 		text_boxes["p_active_multiplier"].text = values.player_active_multiplier
 		text_boxes["p_passive_multiplier"].text = values.player_passive_multiplier
-		--[[rock_hp = Load_Screen_Texts(0,y_offset_text,rockdefs[loadedImgs[2].id].curr_hp, 15),
-		rock_defense = Load_Screen_Texts(0,y_offset_text*2,rockdefs[loadedImgs[2].id].defense, 15),
-		rock_dollar = Load_Screen_Texts(0,y_offset_text*3,rockdefs[loadedImgs[2].id].dollars, 15),
-		_name = Load_Screen_Texts(0,y_offset_text*4,"fuzzyMonkey", 15),
-		}]]
 
 
 	end
@@ -304,8 +304,9 @@ local playerstats = require ("playerstats")
 	
 
 	function Next_Image()
-		-- Resets rock health values
-		rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].start_hp
+		-- Resets rock health values. TODO: Problem because these lines mutate the rock definitions. Resolve!
+		local rockdef = config.getRockDefinition(loadedImgs[2].id)
+		rockdef.curr_hp = rockdef.start_hp
 
 		if imgNum > imgMax - 1 then
 			print("At the Final Rock!")
@@ -332,8 +333,9 @@ local playerstats = require ("playerstats")
 
 	
 	function Prev_Image()
-		-- Resets rock health values
-		rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].start_hp
+		-- Resets rock health values. TODO: Problem because these lines mutate the rock definitions. Resolve!
+		local rockdef = config.getRockDefinition(loadedImgs[2].id)
+		rockdef.curr_hp = rockdef.start_hp
 
 
 		if imgNum < 2 then
@@ -370,14 +372,15 @@ local playerstats = require ("playerstats")
 			tween = transition.to( loadedImgs[3], {time=400, Move_Image_Table(loadedImgs[3],x_anchor+x_offset_img), transition=easing.outExpo } )
 		end
 
-		-- Manual Click logic
-		if rockdefs[loadedImgs[2].id].defense > values.player_active_hit then -- if player's hit bypasses defense
+		-- Manual Click logic. TODO: Problem because these lines mutate the rock definitions. Resolve!
+		local rockdef = config.getRockDefinition(loadedImgs[2].id)
+		if rockdef.defense > values.player_active_hit then -- if player's hit bypasses defense
 		else
-			rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].curr_hp - values.player_active_hit
-			if rockdefs[loadedImgs[2].id].curr_hp <= 0 then
-				playerstats.dollar = playerstats.dollar + rockdefs[loadedImgs[2].id].dollar
+			rockdef.curr_hp = rockdef.curr_hp - values.player_active_hit
+			if rockdef.curr_hp <= 0 then
+				playerstats.dollar = playerstats.dollar + rockdef.dollar
 				print(playerstats.dollar)
-				rockdefs[loadedImgs[2].id].curr_hp = rockdefs[loadedImgs[2].id].start_hp
+				rockdef.curr_hp = rockdef.start_hp
 			end
 		end
 	end
