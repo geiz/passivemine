@@ -17,7 +17,7 @@ local loadedImgs = {nil,nil,nil}
 		-- Array of Size 3, stores image number
 		-- These imgs are a list of displays grouped together
 local background
-local imageNumberText, imageNumberTextShadow
+local imageNumberText, imageNumberTextShadow2
 local display_may_need_update = true
 
 local playerstats = config.loadPlayerStats()
@@ -27,8 +27,11 @@ local playerstats = config.loadPlayerStats()
 	local x_anchor = _W/2
 	local y_anchor = 340
 	local x_offset_img = _W
-	local x_offset_text = _W/2
-	local y_offset_text = 18
+	local x_offset_ptext = 10 
+	local y_offset_ptext = 18
+	local x_offset_rtext = _W/2
+	local y_offset_rtext = _H/2+110
+	local y_spacing_rtext = 18
 
 
 	local g = display.newGroup()
@@ -80,34 +83,46 @@ local playerstats = config.loadPlayerStats()
 
 	-- Adds static texts onto the screen, stored in text_Boxes table.
 	---- Anchor for the texts are set as top left corner of text
-	function Load_Screen_Texts (x, y, text, fontSize, font)
+	function Load_Screen_Texts (x, y, text, fontSize, anchorCenter)
 		local tempText
 		local defaultFont = native.systemFont
-		
-		if font then 
-		else font = defaultFont end
+		 
+		local font = defaultFont
 
-		-- Creates new text on screen
 		tempText = display.newText(text, x, y, font, fontSize)
-		tempText.anchorX = 0 --afssssssssssssssssssssssssssssssss
-		tempText.anchorY = 0 
 		tempText:setFillColor(0)
+		-- Creates new text on screen
+		if anchorCenter then 
+			tempText.anchorX = tempText.width / 2
+			tempText.anchorY = tempText.height / 2
+		else
+			tempText.anchorX = 0 
+			tempText.anchorY = 0 
+		end
 		-- Adds Created text to array
 		--table.insert(text_boxes, temp_text
 		return tempText
 	end
 
+	-- Creates a game-style button with a callbackfunction
+	function Load_Button (x, y, ID, Label, callbackFunction)
+		local tempButton = wdget.newButton 
+		{
+			id = ID,
+			defaultFile = ""
+			overFile = ""
+			label = Label
 
 
+		}
 
-
-
+	end
 
 	 display_table_length = 1  -- Represents number of elements in display_table
 
 	-- rID: Int, rockID. The key for the  array 
 	-- loadedImgNum: Int[1..3], defines the arrays. 1 is leftmost, 3 is rightmost
-	function Load_Slidable_Display (rID, x_offset_img)
+	function Load_Slidable_Display (rID, x_offset_img)	
 		local rockdef = config.getRockDefinition(rID)
 		if (rockdef) then
 			local displayImg
@@ -157,18 +172,18 @@ local playerstats = config.loadPlayerStats()
 
 	-- Lists of default textboxes. This occurs on first load
 	local text_boxes = {
-		r_name = Load_Screen_Texts(0,0, values.rock_name, 15),
-		r_hp = Load_Screen_Texts(0,y_offset_text, values.rock_hp, 15),
-		r_defense = Load_Screen_Texts(0,y_offset_text*2,values.rock_defense, 15),
-		r_dollar = Load_Screen_Texts(0,y_offset_text*3,values.rock_dollar, 15),
+		r_name = Load_Screen_Texts(x_offset_rtext, y_offset_rtext, values.rock_name, 15, true),
+		r_hp = Load_Screen_Texts(x_offset_rtext, y_offset_rtext+y_spacing_rtext, values.rock_hp, 15, true),
+		r_defense = Load_Screen_Texts(x_offset_rtext, y_offset_rtext+y_spacing_rtext*2,values.rock_defense, 15, true),
+		r_dollar = Load_Screen_Texts(x_offset_rtext, y_offset_rtext+y_spacing_rtext*3,values.rock_dollar, 15, true),
 		
-		p_name = Load_Screen_Texts( x_offset_text, 0, values.player_name, 15),
-		p_dollar = Load_Screen_Texts( x_offset_text, y_offset_text, values.player_dollar, 15),
-		p_gem = Load_Screen_Texts( x_offset_text, y_offset_text*2, values.player_gem, 15),
-		p_pickaxe_power = Load_Screen_Texts( x_offset_text, y_offset_text*3, values.player_pickaxe_power, 15),
-		p_pickaxe_quality = Load_Screen_Texts( x_offset_text, y_offset_text*4, values.player_pickaxe_quality, 15),
-		p_active_multiplier = Load_Screen_Texts( x_offset_text, y_offset_text*5, values.player_active_multiplier, 15),
-		p_passive_multiplier = Load_Screen_Texts( x_offset_text, y_offset_text*6, values.player_passive_multiplier, 15),
+		p_name = Load_Screen_Texts( x_offset_ptext, 0, values.player_name, 15),
+		p_dollar = Load_Screen_Texts( x_offset_ptext, y_offset_ptext, values.player_dollar, 15),
+		p_gem = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*2, values.player_gem, 15),
+		p_pickaxe_power = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*3, values.player_pickaxe_power, 15),
+		p_pickaxe_quality = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*4, values.player_pickaxe_quality, 15),
+		p_active_multiplier = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*5, values.player_active_multiplier, 15),
+		p_passive_multiplier = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*6, values.player_passive_multiplier, 15),
 	
 	}
 
