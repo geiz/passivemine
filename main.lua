@@ -20,9 +20,10 @@ local background
 local imageNumberText, imageNumberTextShadow2
 local display_may_need_update = true
 
+local currentrock = nil  -- the rock the player is mining at the moment
+
 local playerstats = config.loadPlayerStats()
 
---function newSlide(rockdefs, slideBackground)
 	local pad = 20
 	local x_anchor = _W/2
 	local y_anchor = 340
@@ -106,11 +107,11 @@ local playerstats = config.loadPlayerStats()
 
 	-- Creates a game-style button with a callbackfunction
 	function Load_Button (x, y, ID, Label, callbackFunction)
-		local tempButton = wdget.newButton 
+		local tempButton = widget.newButton 
 		{
 			id = ID,
-			defaultFile = ""
-			overFile = ""
+			defaultFile = "",
+			overFile = "",
 			label = Label
 
 
@@ -150,13 +151,13 @@ local playerstats = config.loadPlayerStats()
 		passive_multiplier = "Passive Multiplier: ",
 	}
 
-	local rockdef = config.getRockDefinition (loadedImgs[2].id)
+	currentrock = config.getRockDefinition (loadedImgs[2].id)
 
 	local values = {
-		rock_name = rockdef.name,
-		rock_hp = symbols.hp .. rockdef.curr_hp,
-		rock_defense = symbols.defense .. rockdef.defense,
-		rock_dollar = symbols.dollar .. rockdef.dollar,
+		rock_name = currentrock.name,
+		rock_hp = symbols.hp .. currentrock.curr_hp,
+		rock_defense = symbols.defense .. currentrock.defense,
+		rock_dollar = symbols.dollar .. currentrock.dollar,
 
 		player_name = playerstats.name,
 		player_dollar = symbols.dollar .. playerstats.dollar,
@@ -191,11 +192,10 @@ local playerstats = config.loadPlayerStats()
 
 		-- Things that need to be updated
 	function Update_Values ()
-		local rockdef = config.getRockDefinition(loadedImgs[2].id)
-		values.rock_name = rockdef.name
-		values.rock_hp = symbols.hp .. rockdef.curr_hp
-		values.rock_defense = symbols.defense .. rockdef.defense
-		values.rock_dollar = symbols.dollar .. rockdef.dollar
+		values.rock_name = currentrock.name
+		values.rock_hp = symbols.hp .. currentrock.curr_hp
+		values.rock_defense = symbols.defense .. currentrock.defense
+		values.rock_dollar = symbols.dollar .. currentrock.dollar
 
 		values.player_dollar = symbols.dollar .. playerstats.dollar
 		values.player_gem = symbols.gem .. playerstats.gem
@@ -227,13 +227,10 @@ local playerstats = config.loadPlayerStats()
 	function Remove_Img(image)
 		image:removeSelf() -- remove from screen
 		image = nil -- remove from memory
-		--return image 
 	end
 
 	function Remove_Image_Table (imageTable)
-	--	imageTable.image = Remove_Img(imageTable.image)
-	Remove_Img(imageTable.image)
-	
+		Remove_Img(imageTable.image)
 	end
 
 	function abs (num)
@@ -319,10 +316,6 @@ local playerstats = config.loadPlayerStats()
 	
 
 	function Next_Image()
-		-- Resets rock health values. TODO: Problem because these lines mutate the rock definitions. Resolve!
-		local rockdef = config.getRockDefinition(loadedImgs[2].id)
-		rockdef.curr_hp = rockdef.start_hp
-
 		if imgNum > imgMax - 1 then
 			print("At the Final Rock!")
 			Cancel_Move_And_Click()
@@ -336,6 +329,10 @@ local playerstats = config.loadPlayerStats()
 		loadedImgs[2] = loadedImgs[3]
 		loadedImgs[3] = Load_Slidable_Display(imgNum + 2, x_offset_img)
 
+		-- Resets rock health values.
+		currentrock = config.getRockDefinition(loadedImgs[2].id)
+		currentrock.curr_hp = currentrock.start_hp
+
 		print(loadedImgs[1] )
 		print(loadedImgs[2] )
 		print(loadedImgs[3] )
@@ -348,11 +345,6 @@ local playerstats = config.loadPlayerStats()
 
 	
 	function Prev_Image()
-		-- Resets rock health values. TODO: Problem because these lines mutate the rock definitions. Resolve!
-		local rockdef = config.getRockDefinition(loadedImgs[2].id)
-		rockdef.curr_hp = rockdef.start_hp
-
-
 		if imgNum < 2 then
 			print("At the First Rock!")
 			Cancel_Move_And_Click()
@@ -365,6 +357,11 @@ local playerstats = config.loadPlayerStats()
 		loadedImgs[3] = loadedImgs[2] 
 		loadedImgs[2] = loadedImgs[1]
 		loadedImgs[1] = Load_Slidable_Display(imgNum - 2, -x_offset_img)
+
+		-- Resets rock health values.
+		currentrock = config.getRockDefinition(loadedImgs[2].id)
+		currentrock.curr_hp = currentrock.start_hp
+
 
 		print(loadedImgs[1] )
 		print(loadedImgs[2] )
@@ -387,15 +384,14 @@ local playerstats = config.loadPlayerStats()
 			tween = transition.to( loadedImgs[3], {time=400, Move_Image_Table(loadedImgs[3],x_anchor+x_offset_img), transition=easing.outExpo } )
 		end
 
-		-- Manual Click logic. TODO: Problem because these lines mutate the rock definitions. Resolve!
-		local rockdef = config.getRockDefinition(loadedImgs[2].id)
-		if rockdef.defense > values.player_active_hit then -- if player's hit bypasses defense
+		-- Manual Click logic.
+		if currentrock.defense > values.player_active_hit then -- if player's hit bypasses defense
 		else
-			rockdef.curr_hp = rockdef.curr_hp - values.player_active_hit
-			if rockdef.curr_hp <= 0 then
-				playerstats.dollar = playerstats.dollar + rockdef.dollar
+			currentrock.curr_hp = currentrock.curr_hp - values.player_active_hit
+			if currentrock.curr_hp <= 0 then
+				playerstats.dollar = playerstats.dollar + currentrock.dollar
 				print(playerstats.dollar)
-				rockdef.curr_hp = rockdef.start_hp
+				currentrock.curr_hp = currentrock.start_hp
 			end
 		end
 	end
@@ -404,8 +400,3 @@ local playerstats = config.loadPlayerStats()
 	mine_box:addEventListener( "touch", mine_box )
 	Runtime:addEventListener ("enterFrame", function (event) if display_may_need_update then Update_Values () end end)
 
-
-
---end
-
---newSlide(rockdefs, nil, 25, 1)

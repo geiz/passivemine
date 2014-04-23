@@ -1,7 +1,12 @@
 local rockdefs = require ("rockdefs")
+local util = require ("util")
 
 function getRockDefinition (n)
-	return rockdefs[n]
+	if rockdefs[n] then
+		return copy (rockdefs[n])
+	else
+		return nil
+	end
 end
 
 function loadPlayerStats ()
