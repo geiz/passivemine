@@ -1,3 +1,6 @@
+-- Configuration module.
+-- KEY IDEA: Anything that accesses saved data goes in this module.
+
 local rockdefs = require ("rockdefs")
 local util = require ("util")
 
@@ -17,6 +20,7 @@ function loadPlayerStats ()
 		name = "george",
 		dollar = 0,
 		gem = 0,
+		current_rock_id = 1,
 		pickaxe_power = 1,
 		pickaxe_quality = 1,
 		active_multiplier = 1, -- Bonus multiplier for active player clicks

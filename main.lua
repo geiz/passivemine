@@ -3,6 +3,8 @@
 
 display.setStatusBar( display.HiddenStatusBar ) 
 
+require ("playerstate")
+require ("rockstate")
 local config = require ("configuration")
 local widget = require ("widget")
 
@@ -19,10 +21,6 @@ local loadedImgs = {nil,nil,nil}
 local background
 local imageNumberText, imageNumberTextShadow2
 local display_may_need_update = true
-
-local currentrock = nil  -- the rock the player is mining at the moment
-
-local playerstats = config.loadPlayerStats()
 
 	local pad = 20
 	local x_anchor = _W/2
@@ -73,6 +71,7 @@ local playerstats = config.loadPlayerStats()
 		loadedImgs[1] = nil
 		loadedImgs[2] = Load_Slidable_Display(1, 0)
 		loadedImgs[3] = Load_Slidable_Display(2,x_offset_img)
+		selectRock(loadedImgs[2].id)
 		print(loadedImgs[1])
 		print(loadedImgs[2])
 		print(loadedImgs[3])
@@ -119,8 +118,6 @@ local playerstats = config.loadPlayerStats()
 
 	end
 
-	 display_table_length = 1  -- Represents number of elements in display_table
-
 	-- rID: Int, rockID. The key for the  array 
 	-- loadedImgNum: Int[1..3], defines the arrays. 1 is leftmost, 3 is rightmost
 	function Load_Slidable_Display (rID, x_offset_img)	
@@ -151,24 +148,19 @@ local playerstats = config.loadPlayerStats()
 		passive_multiplier = "Passive Multiplier: ",
 	}
 
-	currentrock = config.getRockDefinition (loadedImgs[2].id)
-
 	local values = {
-		rock_name = currentrock.name,
-		rock_hp = symbols.hp .. currentrock.curr_hp,
-		rock_defense = symbols.defense .. currentrock.defense,
-		rock_dollar = symbols.dollar .. currentrock.dollar,
+		rock_name = getRockState().name,
+		rock_hp = symbols.hp .. getRockState().curr_hp,
+		rock_defense = symbols.defense .. getRockState().defense,
+		rock_dollar = symbols.dollar .. getRockState().dollar,
 
-		player_name = playerstats.name,
-		player_dollar = symbols.dollar .. playerstats.dollar,
-		player_gem = symbols.gem .. playerstats.gem,
-		player_pickaxe_power = symbols.pick_power .. playerstats.pickaxe_power,
-		player_pickaxe_quality = symbols.pick_quality .. playerstats.pickaxe_quality,
-		player_active_multiplier = symbols.active_multiplier ..  playerstats.active_multiplier,
-		player_passive_multiplier = symbols.passive_multiplier .. playerstats.passive_multiplier,
-
-		player_active_hit = playerstats.pickaxe_power * playerstats.pickaxe_quality* playerstats.active_multiplier,
-		player_passive_hit = playerstats.pickaxe_power * playerstats.pickaxe_quality* playerstats.passive_multiplier,
+		player_name = getPlayerState().name,
+		player_dollar = symbols.dollar .. getPlayerState().dollar,
+		player_gem = symbols.gem .. getPlayerState().gem,
+		player_pickaxe_power = symbols.pick_power .. getPlayerState().pickaxe_power,
+		player_pickaxe_quality = symbols.pick_quality .. getPlayerState().pickaxe_quality,
+		player_active_multiplier = symbols.active_multiplier ..  getPlayerState().active_multiplier,
+		player_passive_multiplier = symbols.passive_multiplier .. getPlayerState().passive_multiplier,
 	}
 
 	-- Lists of default textboxes. This occurs on first load
@@ -192,16 +184,16 @@ local playerstats = config.loadPlayerStats()
 
 		-- Things that need to be updated
 	function Update_Values ()
-		values.rock_name = currentrock.name
-		values.rock_hp = symbols.hp .. currentrock.curr_hp
-		values.rock_defense = symbols.defense .. currentrock.defense
-		values.rock_dollar = symbols.dollar .. currentrock.dollar
+		values.rock_name = getRockState().name
+		values.rock_hp = symbols.hp .. getRockState().curr_hp
+		values.rock_defense = symbols.defense .. getRockState().defense
+		values.rock_dollar = symbols.dollar .. getRockState().dollar
 
-		values.player_dollar = symbols.dollar .. playerstats.dollar
-		values.player_gem = symbols.gem .. playerstats.gem
-		values.player_pickaxe_power = symbols.pick_power .. playerstats.pickaxe_power
-		values.player_active_multiplier = symbols.active_multiplier ..  playerstats.active_multiplier
-		values.player_passive_multiplier = symbols.passive_multiplier .. playerstats.passive_multiplier
+		values.player_dollar = symbols.dollar .. getPlayerState().dollar
+		values.player_gem = symbols.gem .. getPlayerState().gem
+		values.player_pickaxe_power = symbols.pick_power .. getPlayerState().pickaxe_power
+		values.player_active_multiplier = symbols.active_multiplier ..  getPlayerState().active_multiplier
+		values.player_passive_multiplier = symbols.passive_multiplier .. getPlayerState().passive_multiplier
 
 		text_boxes["r_name"].text = values.rock_name
 		text_boxes["r_hp"].text = values.rock_hp
@@ -302,11 +294,6 @@ local playerstats = config.loadPlayerStats()
 		
 	end
 
-	function Active_Mine ()
-		
-		values.rock_hp = values.rock_hp - values.player_pickaxe_power
-	end
-
 	function Cancel_Tween()
 		if prevTween then 
 			transition.cancel(prevTween)
@@ -328,11 +315,7 @@ local playerstats = config.loadPlayerStats()
 		loadedImgs[1] = loadedImgs[2]
 		loadedImgs[2] = loadedImgs[3]
 		loadedImgs[3] = Load_Slidable_Display(imgNum + 2, x_offset_img)
-
-		-- Resets rock health values.
-		currentrock = config.getRockDefinition(loadedImgs[2].id)
-		currentrock.curr_hp = currentrock.start_hp
-
+		selectRock (loadedImgs[2].id)
 		print(loadedImgs[1] )
 		print(loadedImgs[2] )
 		print(loadedImgs[3] )
@@ -357,12 +340,7 @@ local playerstats = config.loadPlayerStats()
 		loadedImgs[3] = loadedImgs[2] 
 		loadedImgs[2] = loadedImgs[1]
 		loadedImgs[1] = Load_Slidable_Display(imgNum - 2, -x_offset_img)
-
-		-- Resets rock health values.
-		currentrock = config.getRockDefinition(loadedImgs[2].id)
-		currentrock.curr_hp = currentrock.start_hp
-
-
+		selectRock (loadedImgs[2].id)
 		print(loadedImgs[1] )
 		print(loadedImgs[2] )
 		print(loadedImgs[3] )
@@ -385,15 +363,8 @@ local playerstats = config.loadPlayerStats()
 		end
 
 		-- Manual Click logic.
-		if currentrock.defense > values.player_active_hit then -- if player's hit bypasses defense
-		else
-			currentrock.curr_hp = currentrock.curr_hp - values.player_active_hit
-			if currentrock.curr_hp <= 0 then
-				playerstats.dollar = playerstats.dollar + currentrock.dollar
-				print(playerstats.dollar)
-				currentrock.curr_hp = currentrock.start_hp
-			end
-		end
+		mineCurrentRock()
+
 	end
 
 	mine_box.touch = Touch_Listener
