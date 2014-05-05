@@ -32,37 +32,57 @@ local display_may_need_update = true
 	local y_offset_rtext = _H/2+110
 	local y_spacing_rtext = 18
 
+	-- Create a group to hold all images and displayed objects.
+	local view = display.newGroup()
+	view.x = 0
 
-	local g = display.newGroup()
-		
-	--[[if slideBackground then
-		background = display.newImage(slideBackground, 0, 0, true)
-	else]]
-		background = display.newRect( 0, 0, _W, _H)
+	-- Create sub groups to act as "pages" that player can switch between
+	local main_view = display.newGroup()
+	main_view.anchorX = 0
+	main_view.anchorY = 0
+	main_view.x = 0
+	view:insert(main_view)
 
-		-- set anchors on the background
-		background.anchorX = 0
-		background.anchorY = 0
+	local upgrade_view = display.newGroup()
+	--upgrade_view:translate(_W/2  + _W, _H/2) -- Starts below main screen
+	upgrade_view.anchorX = 0
+	upgrade_view.anchorX = 0
+	upgrade_view.x = -_W
+	view:insert(upgrade_view)
 
-		background:setFillColor(1) 
-		background.alpha = 1 -- 0 will set BG as invisible
-		background.isHitTestable = true -- Allows invisible to be hit 
-	--end
-	-- Positions background
-	g.x = 0
-	--g.y = display.screenOriginY  -- screenOriginY is from the top part of screen
-	g:insert(background)
+	--------------------------------------	
+	--[[main_view display objects]]
+	--------------------------------------		
+	-- Positions Display Container
+	testground = display.newRect(upgrade_view, 0, 0, _W,_H)
+	testground:setFillColor(0.5)
+	testground.anchorX = 0
+	testground.anchorY = 0
+	testground.x = 0
+	testground.y = 0
+	upgrade_view:insert(testground)
+
+
+	-- Creates Background
+	background = display.newRect(main_view, 0, 0, _W, _H)
+	background.anchorX = 0
+	background.anchorY = 0
+	background.x = 0
+	background.y = 0
+	background:setFillColor(1) 
+	background.alpha = 1 -- 0 will set BG as invisible
+	--background.isHitTestable = true -- Allows invisible to be hit 
+	main_view:insert(background)
 
 	--Creates invisible hitbox
 	mine_box = display.newRect(20,145,280,190,true)
 	mine_box.anchorX = 0
 	mine_box.anchorY = 0
-	--mine_box.x = 25
-	--mine_box.y = 200
 	mine_box:setFillColor(0.5,0,0)
 	mine_box.alpha = 0.5
 	mine_box.isHitTestable = true
-	g:insert(mine_box)
+	main_view:insert(mine_box)
+	
 
 
 	-- array 2 is the shown one. 1 is left, 3 is right.
@@ -91,6 +111,7 @@ local display_may_need_update = true
 
 		tempText = display.newText(text, x, y, font, fontSize)
 		tempText:setFillColor(0)
+
 		-- Creates new text on screen
 		if anchorCenter then 
 			tempText.anchorX = tempText.width / 2
@@ -99,35 +120,96 @@ local display_may_need_update = true
 			tempText.anchorX = 0 
 			tempText.anchorY = 0 
 		end
-		-- Adds Created text to array
-		--table.insert(text_boxes, temp_text
+		
 		return tempText
 	end
 
-	-- Creates a game-style button with a callbackfunction
-	function Load_Button (x, y, ID, Label, callbackFunction)
-		local tempButton = widget.newButton 
-		{
-			id = ID,
-			defaultFile = "",
-			overFile = "",
-			label = Label
+	local toUpgradeScreen = function()
+		print("trigger")
+		transition.to(main_view, { x = _W , time = 400, transition = easing.outExpo} )
+		transition.to(upgrade_view, { x = 0, time = 400, transition = easing.outExpo} )
+	end
 
-
-		}
+	local toMainScreen = function ()
+		transition.to(main_view, { x = 0 , time = 400, transition = easing.outExpo} )
+		transition.to(upgrade_view, { x = -_W, time = 400, transition = easing.outExpo} )
 
 	end
 
-	-- rID: Int, rockID. The key for the  array 
+
+	-- Creates a game-style button with a callbackfunction
+	-- ID Must be unique for each button.
+	function Load_Button (x, y, ID, defaultImg, overImg, displayContainer, onRelease)
+		local tempButton = widget.newButton 
+		{
+			id = ID,
+			defaultFile = defaultImg,
+			overFile = overImg,
+			--label = Label,
+			emboss = false,
+			onPress = nil, -- We only want interaction on release
+			onRelease = onRelease,
+			x = x,
+			y = y,
+		}
+
+		displayContainer:insert(tempButton)
+
+		-- Adds to table
+		--buttons[tempButton.id] = tempButton
+		return tempButton
+	end
+
+
+	-- Manually Load all of the buttons on main screen
+	function Load_Main_Buttons ()
+		upgrades = Load_Button (_W/6, _H -_H/15, "upgrades", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", main_view, toUpgradeScreen )--onTouch())
+		mainscreen = Load_Button(_W/3*2, _H -_H/15, "upgrades", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view,toMainScreen )--onTouch())
+		
+		upgrade_menu_buttons = { -- a key/value pair for the buttons ingame
+			bs_upgrade = Load_Button (_W/4, _H -_H/10 *5, "bs_upgrade", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			bs_skill = Load_Button (_W/4, _H -_H/10 *4, "bs_skill", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			bs_expertise = Load_Button (_W/4, _H -_H/10 *3, "bs_expertise", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			bs_efficiency = Load_Button (_W/4, _H -_H/10 *2, "bs_efficiency", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			mc_power = Load_Button (_W/4*2, _H -_H/10 *5, "mc_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			ac_power = Load_Button (_W/4*2, _H -_H/10 *4, "ac_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			ac_frequency = Load_Button (_W/4*2, _H -_H/10 *3, "ac_frequency", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			idle_power = Load_Button (_W/4*2, _H -_H/10 *2, "idle_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			gem_finder = Load_Button (_W/4*3, _H -_H/10 *5, "gem_finder", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			gem_waster = Load_Button (_W/4*3, _H -_H/10 *4, "gem_waster", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+		}
+		--[[]]
+	end
+
+	Load_Main_Buttons(true)
+
+
+
+--[[
+	local function onTouch (event)
+		local phase = event.phase
+		local target = event.target
+
+		if "press" == phase then
+		elseif "release" == phase then
+			transition.to(main_view, { x = _W/2 + display.screenOriginX, time = 400, transition = easing.outExpo} )
+			transition.to(upgrade_view, { x = _W/2 +upgrade_view.contentWidth * 0.5, time = 400, transition = easing.outExpo} )
+		end
+	end
+]]
+
+
+	-- rID: Int, rID. The key for the table 
 	-- loadedImgNum: Int[1..3], defines the arrays. 1 is leftmost, 3 is rightmost
 	function Load_Slidable_Display (rID, x_offset_img)	
 		local rockdef = config.getRockDefinition(rID)
 		if (rockdef) then
-			local displayImg
+			--local displayImg
 			local displayTable = {
 				image = display.newImage(rockdef.image, x_anchor+x_offset_img, y_anchor-100),
 				id = rockdef.id
 			}
+			main_view:insert(displayTable.image) -- 
 			return displayTable
 		else
 			return nil
@@ -177,8 +259,13 @@ local display_may_need_update = true
 		p_pickaxe_quality = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*4, values.player_pickaxe_quality, 15),
 		p_active_multiplier = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*5, values.player_active_multiplier, 15),
 		p_passive_multiplier = Load_Screen_Texts( x_offset_ptext, y_offset_ptext*6, values.player_passive_multiplier, 15),
-	
 	}
+	-- adds certain text_boxes to main view display container
+	main_view:insert(text_boxes.r_name)
+	main_view:insert(text_boxes.r_hp)
+	main_view:insert(text_boxes.r_defense)
+	main_view:insert(text_boxes.r_dollar)
+
 
 
 
@@ -315,7 +402,7 @@ local display_may_need_update = true
 		loadedImgs[1] = loadedImgs[2]
 		loadedImgs[2] = loadedImgs[3]
 		loadedImgs[3] = Load_Slidable_Display(imgNum + 2, x_offset_img)
-		selectRock (loadedImgs[2].id)
+		selectRock (loadedImgs[2].id) -- Acts as confirming function 
 		print(loadedImgs[1] )
 		print(loadedImgs[2] )
 		print(loadedImgs[3] )

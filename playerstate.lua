@@ -13,6 +13,10 @@ function passiveHitPower ()
 	return playerstate.pickaxe_power * playerstate.pickaxe_quality * playerstate.passive_multiplier
 end
 
+function switchScreen ()
+	
+end
+
 function setCurrentRockIdInPlayerstate (n)  -- intended for use by the rockstate module.
 	playerstate.current_rock_id = n
 end

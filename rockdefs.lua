@@ -1,4 +1,4 @@
-local mine_img_folder = "mineimgs/"
+local mine_img_folder = "mine_imgs/"
 
 local rockdefs = {
 	{	name = "Poo", 
