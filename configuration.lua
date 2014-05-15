@@ -3,6 +3,7 @@
 
 local rockdefs = require ("rockdefs")
 local util = require ("util")
+ btn_img_folder = "btn_imgs/"
 
 function getRockDefinition (n)
 	if rockdefs[n] then
@@ -25,7 +26,10 @@ function loadPlayerStats ()
 		pickaxe_quality = 1,
 		active_multiplier = 1, -- Bonus multiplier for active player clicks
 		passive_multiplier = 1, -- Bonus multiplier for passive player clicks
-
+		bs_upgrade_level = 1,
+		bs_skill_level = 1, 
+		bs_expertise_level = 1,
+		bs_efficiency_level = 1,
 	}
 end
 
@@ -36,5 +40,5 @@ end
 return {
 	getRockDefinition = getRockDefinition,
 	loadPlayerStats = loadPlayerStats,
-	savePlayerStats = savePlayerStats
+	savePlayerStats = savePlayerStats,
 }

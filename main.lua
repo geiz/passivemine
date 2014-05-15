@@ -3,7 +3,7 @@
 
 display.setStatusBar( display.HiddenStatusBar ) 
 
-require ("playerstate")
+require ("upgrades")
 require ("rockstate")
 local config = require ("configuration")
 local widget = require ("widget")
@@ -137,14 +137,17 @@ local display_may_need_update = true
 	end
 
 
+	
+
+
 	-- Creates a game-style button with a callbackfunction
 	-- ID Must be unique for each button.
 	function Load_Button (x, y, ID, defaultImg, overImg, displayContainer, onRelease)
 		local tempButton = widget.newButton 
 		{
 			id = ID,
-			defaultFile = defaultImg,
-			overFile = overImg,
+			defaultFile = btn_img_folder .. defaultImg,
+			overFile = btn_img_folder .. overImg,
 			--label = Label,
 			emboss = false,
 			onPress = nil, -- We only want interaction on release
@@ -163,25 +166,29 @@ local display_may_need_update = true
 
 	-- Manually Load all of the buttons on main screen
 	function Load_Main_Buttons ()
-		upgrades = Load_Button (_W/6, _H -_H/15, "upgrades", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", main_view, toUpgradeScreen )--onTouch())
-		mainscreen = Load_Button(_W/3*2, _H -_H/15, "upgrades", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view,toMainScreen )--onTouch())
+		upgradescreen = Load_Button (_W/6, _H -_H/15, "upgradescreen", 
+				"buttonUpgradeDefault.png", 
+				"buttonUpgradeOver.png", main_view, toUpgradeScreen )--onTouch())
+		mainscreen = Load_Button(_W/3*2, _H -_H/15, "upgrades", 
+				"buttonUpgradeDefault.png", 
+				"buttonUpgradeOver.png", upgrade_view, toMainScreen )--onTouch())
 		
 		upgrade_menu_buttons = { -- a key/value pair for the buttons ingame
-			bs_upgrade = Load_Button (_W/4, _H -_H/10 *5, "bs_upgrade", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
-			bs_skill = Load_Button (_W/4, _H -_H/10 *4, "bs_skill", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
-			bs_expertise = Load_Button (_W/4, _H -_H/10 *3, "bs_expertise", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
-			bs_efficiency = Load_Button (_W/4, _H -_H/10 *2, "bs_efficiency", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
-			mc_power = Load_Button (_W/4*2, _H -_H/10 *5, "mc_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
+			bs_upgrade = Load_Button (_W/4, _H -_H/10 *5, "bs_upgrade", "buttonUpgradeD.png", "buttonUpgradeOver.png", upgrade_view, BS_Upgrade),
+			bs_skill = Load_Button (_W/4, _H -_H/10 *4, "bs_skill", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, BS_Skill),
+			bs_expertise = Load_Button (_W/4, _H -_H/10 *3, "bs_expertise", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, BS_Expertise),
+			bs_efficiency = Load_Button (_W/4, _H -_H/10 *2, "bs_efficiency", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, BS_Efficiency),
+			--[[mc_power = Load_Button (_W/4*2, _H -_H/10 *5, "mc_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
 			ac_power = Load_Button (_W/4*2, _H -_H/10 *4, "ac_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
 			ac_frequency = Load_Button (_W/4*2, _H -_H/10 *3, "ac_frequency", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
 			idle_power = Load_Button (_W/4*2, _H -_H/10 *2, "idle_power", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
 			gem_finder = Load_Button (_W/4*3, _H -_H/10 *5, "gem_finder", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
 			gem_waster = Load_Button (_W/4*3, _H -_H/10 *4, "gem_waster", "buttonUpgradeDefault.png", "buttonUpgradeOver.png", upgrade_view, nil),
-		}
+		]]}
 		--[[]]
 	end
 
-	Load_Main_Buttons(true)
+	Load_Main_Buttons()
 
 
 

@@ -37,6 +37,7 @@ local rockdefs = {
 		dollar = 100000, 
 		image = mine_img_folder.."halite.jpg", 
 		id = 6},
+	
 }
 
 return rockdefs
